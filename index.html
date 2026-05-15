@@ -61,7 +61,6 @@
             background: var(--orange-bar); 
             border-top: 2px solid #000; 
         }
-        body.mobile-mode .footer-actions { display: none !important; }
 
         /* --- BASE / DESKTOP --- */
         body { font-family: sans-serif; background: var(--bg); margin: 0; padding: 5px; color: var(--text); display: flex; justify-content: center; transition: 0.3s; }
@@ -96,7 +95,6 @@
         .score-down { font-size: 1.2rem; color: var(--score-main); font-weight: 900; }
         .analysis-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin-top: 10px; border-top: 1px solid var(--border); padding-top: 10px; }
         .analysis-card { background: rgba(0,0,0,0.2); padding: 8px; border-radius: 8px; border-top: 3px solid var(--accent); }
-        .footer-actions { display: flex; gap: 10px; margin-top: 5px; }
 
         #histView { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:3000; display:none; padding:10px; overflow-y:auto; box-sizing: border-box; }
         .history-item { background:#333; padding:8px 12px; border-radius:8px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; color:white; font-size: 0.85rem; border-left: 4px solid var(--accent); }
@@ -135,11 +133,6 @@
         </div>
         <div class="quick-pad" id="padUI"><button class="pad-btn btn-ronny" onclick="setV(0)">0 (Ronny)</button></div>
     </div>
-
-    <div class="footer-actions" id="footerActions">
-        <button class="pad-btn" style="background:var(--win); flex:3; height: 60px;" onclick="finish()">ARCHIV & NEU</button>
-        <button class="pad-btn" style="background:#555; flex:1; height: 60px; font-size: 0.7rem;" onclick="askMasterReset()">RESET</button>
-    </div>
 </div>
 
 <div id="histView">
@@ -157,7 +150,7 @@
     let isArcView = false, arcScores = [], arcNames = [], isQuickPress = false, isLocked = false;
     function getSafe(k, f) { try { let d = localStorage.getItem(k); return d ? JSON.parse(d) : f; } catch(e) { return f; } }
 
-    let pNames = getSafe('10k_names', ["Aggi", "David", "", "", "", "", "", ""]);
+    let pNames = getSafe('10k_names', ["Spieler 1", "Spieler 2", "", "", "", "", "", ""]);
     let scores = getSafe('10k_scores', [Array(MAX_P).fill("")]);
     let stats = getSafe('10k_stats', Array(MAX_P).fill(0));
     let archive = getSafe('10k_archive', []);
