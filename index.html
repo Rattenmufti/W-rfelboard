@@ -292,8 +292,14 @@
         const activeScores = isArcView ? arcScores : scores;
         let dist = { ronny:{}, small:{}, med:{}, big:{}, elite:{}, legend:{} };
         const footerRow = document.getElementById('tRow'); 
-        footerRow.innerHTML = '<td>Σ</td>';
+        footerRow.innerHTML = '';
 
+        // Erste Zelle für das Summen-Symbol
+        const firstCell = document.createElement('td');
+        firstCell.innerText = 'Σ';
+        footerRow.appendChild(firstCell);
+
+        // Summen pro aktivem Spieler berechnen und Zellen einzeln anhängen
         sorted.forEach(p => {
             let total = 0;
             activeScores.forEach(r => {
@@ -305,7 +311,10 @@
                     dist[cat][p.i]++;
                 }
             });
-            footerRow.innerHTML += `<td><div class="score-box"><span class="score-up">${total}</span><span class="score-down">${10000-total}</span></div></td>`;
+            
+            const td = document.createElement('td');
+            td.innerHTML = `<div class="score-box"><span class="score-up">${total}</span><span class="score-down" style="font-size:0.7rem; display:block; opacity:0.8;">${10000-total}</span></div>`;
+            footerRow.appendChild(td);
         });
 
         document.getElementById('statsDisp').innerHTML = sorted.map(p => `
