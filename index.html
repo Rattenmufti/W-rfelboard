@@ -291,23 +291,27 @@
     function updateUI(sorted) {
         const activeScores = isArcView ? arcScores : scores;
         let dist = { ronny:{}, small:{}, med:{}, big:{}, elite:{}, legend:{} };
-        const f = document.getElementById('tRow'); f.innerHTML = '<td>Σ</td>';
+        const footerRow = document.getElementById('tRow'); 
+        footerRow.innerHTML = '<td>Σ</td>';
+
         sorted.forEach(p => {
             let total = 0;
             activeScores.forEach(r => {
-                const v = parseInt(r[p.i]);
-                if(!isNaN(v)) {
-                    total += v;
-                    let cat = v===0?'ronny':v<=450?'small':v<=700?'med':v<=950?'big':v<=1500?'elite':'legend';
+                const val = parseInt(r[p.i]);
+                if(!isNaN(val)) {
+                    total += val;
+                    let cat = val===0?'ronny':val<=450?'small':val<=700?'med':val<=950?'big':val<=1500?'elite':'legend';
                     if(!dist[cat][p.i]) dist[cat][p.i] = 0;
                     dist[cat][p.i]++;
                 }
             });
-            f.innerHTML += `<td><div class="score-box"><span class="score-up">${total}</span><span class="score-down">${10000-total}</span></div></td>`;
+            footerRow.innerHTML += `<td><div class="score-box"><span class="score-up">${total}</span><span class="score-down">${10000-total}</span></div></td>`;
         });
+
         document.getElementById('statsDisp').innerHTML = sorted.map(p => `
             <div class="stat-item"><span class="stat-name">${p.n}</span><span class="stat-wins">👑 ${stats[p.i]||0}</span></div>
         `).join('');
+        
         const cats = [['RONNYS (0)','ronny'],['SMALL (bis 450)','small'],['MED (bis 700)','med'],['BIG (bis 950)','big'],['ELITE (bis 1500)','elite']];
         document.getElementById('analysisUI').innerHTML = cats.map(c => {
             const details = sorted.map(p => `<div class="ana-row" style="font-size:0.65rem;"><span>${p.n}:</span> <b>${dist[c[1]][p.i] || 0}</b></div>`).join('');
