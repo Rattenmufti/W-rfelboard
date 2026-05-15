@@ -294,12 +294,10 @@
         const footerRow = document.getElementById('tRow'); 
         footerRow.innerHTML = '';
 
-        // Erste Zelle für das Summen-Symbol
         const firstCell = document.createElement('td');
         firstCell.innerText = 'Σ';
         footerRow.appendChild(firstCell);
 
-        // Summen pro aktivem Spieler berechnen und Zellen einzeln anhängen
         sorted.forEach(p => {
             let total = 0;
             activeScores.forEach(r => {
@@ -313,7 +311,8 @@
             });
             
             const td = document.createElement('td');
-            td.innerHTML = `<div class="score-box"><span class="score-up">${total}</span><span class="score-down" style="font-size:0.7rem; display:block; opacity:0.8;">${10000-total}</span></div>`;
+            // Erhöhte Schriftgröße (1.4rem) und fettere Darstellung
+            td.innerHTML = `<div style="font-size:1.4rem; line-height:1; display:flex; justify-content:center; align-items:center; gap:4px; font-weight:900;"><span>${total}</span><span style="opacity:0.6; font-size:1rem;">/</span><span style="color:#222;">${10000-total}</span></div>`;
             footerRow.appendChild(td);
         });
 
