@@ -69,15 +69,19 @@
         @media (orientation: landscape) {
             body.mobile-mode .app {
                 padding-bottom: 15px !important;
-                padding-right: 185px !important;
                 box-sizing: border-box;
+            }
+            body.mobile-mode.few-players .app {
+                padding-right: 280px !important;
+            }
+            body.mobile-mode.many-players .app {
+                padding-right: 185px !important;
             }
             body.mobile-mode .quick-pad {
                 top: 0 !important;
                 right: 0 !important;
                 left: auto !important;
                 bottom: 0 !important;
-                width: 175px !important;
                 height: 100vh !important;
                 grid-template-columns: repeat(3, 1fr) !important;
                 border-top: none !important;
@@ -86,6 +90,12 @@
                 box-shadow: -10px 0 25px rgba(0,0,0,0.6);
                 padding: 6px;
                 gap: 4px;
+            }
+            body.mobile-mode.few-players .quick-pad {
+                width: 270px !important;
+            }
+            body.mobile-mode.many-players .quick-pad {
+                width: 175px !important;
             }
             body.mobile-mode .pad-btn {
                 padding: 10px 0 !important;
@@ -311,6 +321,13 @@
         const activeScores = isArcView ? arcScores : scores;
         const activeNames = isArcView ? arcNames : pNames;
         const sorted = getSortedActive();
+        if (sorted.length <= 4) {
+            document.body.classList.add('few-players');
+            document.body.classList.remove('many-players');
+        } else {
+            document.body.classList.add('many-players');
+            document.body.classList.remove('few-players');
+        }
         const nGrid = document.getElementById('namesGrid'); nGrid.innerHTML = '';
         activeNames.forEach((n, i) => {
             const div = document.createElement('div'); div.className = 'name-slot';
