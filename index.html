@@ -134,7 +134,7 @@
             gap: 10px; 
             height: 100vh; 
             box-sizing: border-box;
-            overflow: hidden; /* Verhindert das Scrollen der gesamten Seite im Desktop-Modus */
+            overflow: hidden; 
         }
 
         .header-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; flex-shrink: 0; }
@@ -423,7 +423,37 @@
     }
 
     function getSortedActive() { const names = isArcView ? arcNames : pNames; const active = names.map((n, i) => ({n, i})).filter(p => p.n && p.n.trim() !== ""); const sPos = active.findIndex(p => p.i === startIdx); return (sPos === -1) ? active : [...active.slice(sPos), ...active.slice(0, sPos)]; }
-    function saveCSV() { const d = { pNames, scores, stats, archive, startIdx }; const blob = new Blob([JSON.stringify(d)], { type: 'text/csv' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `würfelboard_backup.csv`; a.click(); }
+    
+    async function saveCSV() {
+        const d = { pNames, scores, stats, archive, startIdx };
+        const jsonString = JSON.stringify(d);
+        const fileName = `würfelboard_backup.csv`;
+
+        if ('showSaveFilePicker' in window) {
+            try {
+                const handle = await window.showSaveFilePicker({
+                    suggestedName: fileName,
+                    types: [{
+                        description: 'JSON-CSV Backup',
+                        accept: { 'text/csv': ['.csv'] }
+                    }]
+                });
+                const writable = await handle.createWritable();
+                await writable.write(jsonString);
+                await writable.close();
+                return;
+            } catch (err) {
+                if (err.name === 'AbortError') return;
+            }
+        }
+
+        const blob = new Blob([jsonString], { type: 'text/csv' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = fileName;
+        a.click();
+    }
+
     function loadCSV(e) { const r = new FileReader(); r.onload = (ev) => { try { const d = JSON.parse(ev.target.result); pNames=d.pNames; scores=d.scores; stats=d.stats; archive=d.archive; startIdx=d.startIdx; save(); render(); } catch(err) { alert("Fehler!"); } }; r.readAsText(e.target.files[0]); }
     
     function openHistory() { document.getElementById('histView').style.display = 'block'; renderArchiveList(); }
