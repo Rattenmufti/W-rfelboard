@@ -564,6 +564,12 @@
             winText = "Unentschieden: " + winners.join(", ");
         } else if (winners.length === 1) {
             winText = "Sieger: " + winners[0];
+        } else {
+            // Niemand hat 10.000 Punkte erreicht -> Sicherheitsabfrage wegen vorzeitigem Abbruch
+            if (!confirm("Achtung: Es hat noch kein Spieler die 10.000 Punkte erreicht!\n\nMöchtest du dieses laufende Spiel wirklich vorzeitig abbrechen und eine neue Runde starten?")) {
+                return; // Abbruch der Funktion, das Spiel läuft normal weiter
+            }
+            winText = "Vorzeitig beendet";
         }
         
         archive.unshift({ d: new Date().toLocaleString(), w: winText, s: JSON.parse(JSON.stringify(scores)), names: JSON.parse(JSON.stringify(pNames)) });
