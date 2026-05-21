@@ -56,11 +56,12 @@
         }
         body.mobile-mode .quick-pad { 
             position: fixed; bottom: 0; left: 0; width: 100vw !important;
-            background: var(--card-bg); grid-template-columns: repeat(5, 1fr) !important;
-            padding: 6px; gap: 4px; border-top: 3px solid var(--accent);
+            background: var(--card-bg); 
+            padding: 6px; border-top: 3px solid var(--accent);
             box-shadow: 0 -10px 25px rgba(0,0,0,0.6); z-index: 1100; box-sizing: border-box;
             align-self: stretch !important;
             height: auto !important;
+            display: block !important;
         }
         body.mobile-mode .pad-btn { padding: 15px 0 !important; font-size: 1rem !important; }
         body.mobile-mode .btn-ronny { 
@@ -119,13 +120,10 @@
                 left: auto !important;
                 bottom: 0 !important;
                 height: 100vh !important;
-                grid-template-columns: repeat(3, 1fr) !important;
                 border-top: none !important;
                 border-left: 3px solid var(--accent);
-                overflow-y: auto;
                 box-shadow: -10px 0 25px rgba(0,0,0,0.6);
                 padding: 6px;
-                gap: 4px;
                 align-self: stretch !important;
             }
             body.mobile-mode.few-players .quick-pad {
@@ -199,10 +197,29 @@
         .score-input { width: 100%; height: 100%; border: none; text-align: center; font-size: 1.1rem; background: transparent; color: var(--text); outline: none; }
         .score-input.system-focus { background: var(--input-focus); box-shadow: inset 0 0 0 3px var(--accent); font-weight: bold; }
         
-        .quick-pad { width: 450px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; flex-shrink: 0; align-self: stretch; height: 100%; }
+        /* --- PAD SEITEN ARCHITEKTUR --- */
+        .quick-pad { width: 450px; flex-shrink: 0; align-self: stretch; height: 100%; position: relative; }
+        .pad-viewport { width: 100%; height: calc(100% - 15px); overflow-x: auto; overflow-y: hidden; display: flex; scroll-snap-type: x mandatory; scroll-behavior: smooth; }
+        .pad-viewport::-webkit-scrollbar { display: none; }
+        .pad-viewport { -ms-overflow-style: none; scrollbar-width: none; }
+        .pad-page { min-width: 100%; width: 100%; height: 100%; scroll-snap-align: start; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; box-sizing: border-box; }
+        body.mobile-mode .pad-page { grid-template-columns: repeat(4, 1fr) !important; }
+        body.mobile-mode .pad-viewport { height: auto !important; }
+        @media (orientation: landscape) {
+            body.mobile-mode .pad-page { grid-template-columns: repeat(3, 1fr) !important; }
+            body.mobile-mode .pad-viewport { height: calc(100% - 15px) !important; overflow-y: auto; }
+        }
+        .pad-dots { display: flex; justify-content: center; gap: 6px; margin-top: 5px; height: 10px; align-items: center; }
+        .pad-dot { width: 6px; height: 6px; background: #555; border-radius: 50%; transition: 0.2s; }
+        .pad-dot.active { background: var(--accent); width: 8px; height: 8px; }
+
         .pad-btn { padding: 0 2px; border: none; border-radius: 8px; background: #34495e; color: white; font-weight: bold; font-size: 1.2rem; cursor: pointer; }
         .pad-btn:disabled { background: #555; color: var(--locked); }
         .btn-ronny { background: var(--ronny) !important; grid-column: span 4; padding: 0; }
+        body.mobile-mode .btn-ronny { grid-column: span 4 !important; }
+        @media (orientation: landscape) {
+            body.mobile-mode .btn-ronny { grid-column: span 3 !important; }
+        }
         
         .score-box { display: flex; flex-direction: column; line-height: 1.1; height: 100%; justify-content: center; }
         .score-box.near-win { animation: nearWinBlinker 1.2s linear infinite; }
@@ -290,7 +307,20 @@
                 <tfoot><tr id="tRow"></tr></tfoot>
             </table>
         </div>
-        <div class="quick-pad" id="padUI"><button class="pad-btn btn-ronny" onclick="playPadSound(); setV(0)">0 (Ronny)</button></div>
+        <div class="quick-pad" id="padUI">
+            <div class="pad-viewport" id="padViewport" onscroll="updatePadDots()">
+                <div class="pad-page" id="padPage1">
+                    <button class="pad-btn btn-ronny" onclick="playPadSound(); setV(0)">0 (Ronny)</button>
+                </div>
+                <div class="pad-page" id="padPage2"></div>
+                <div class="pad-page" id="padPage3"></div>
+            </div>
+            <div class="pad-dots">
+                <div class="pad-dot active" id="dot1"></div>
+                <div class="pad-dot" id="dot2"></div>
+                <div class="pad-dot" id="dot3"></div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -319,6 +349,15 @@
     let isArcView = false, arcScores = [], arcNames = [], isQuickPress = false, isLocked = false;
     let focus = { r: 0, pI: 0, apIdx: 0 }; 
     
+    function updatePadDots() {
+        const vp = document.getElementById('padViewport');
+        if (!vp) return;
+        const pageIdx = Math.round(vp.scrollLeft / vp.clientWidth);
+        document.getElementById('dot1').classList.toggle('active', pageIdx === 0);
+        document.getElementById('dot2').classList.toggle('active', pageIdx === 1);
+        document.getElementById('dot3').classList.toggle('active', pageIdx === 2);
+    }
+
     // Audio-Funktion für haptisches/akustisches Feedback
     function playPadSound() {
         try {
@@ -612,7 +651,7 @@
         const activeScores = isArcView ? arcScores : scores;
 
         const pathWidth = document.querySelector('.race-track-path')?.getBoundingClientRect().width || 100;
-        const wrapperWidth = 50; 
+        const wrapperWidth = 65; 
         const availableWidth = pathWidth - wrapperWidth; 
 
         sorted.forEach(p => {
@@ -629,13 +668,8 @@
             const textEl = document.getElementById(`horse-text-${p.i}`);
             
             if (wrapper && textEl) {
-                if (total >= 10000) {
-                    wrapper.style.left = 'auto';
-                    wrapper.style.right = '0px';
-                } else {
-                    wrapper.style.right = 'auto';
-                    wrapper.style.left = `${calculatedLeft}px`;
-                }
+                wrapper.style.right = 'auto';
+                wrapper.style.left = `${calculatedLeft}px`;
                 textEl.innerText = `${total}`;
             }
         });
@@ -815,8 +849,34 @@
         save();
     }
 
-    const pad = document.getElementById('padUI');
-    for(let v=350; v<=1300; v+=50) { const b = document.createElement('button'); b.className='pad-btn'; b.innerText=v; b.onclick=()=> { playPadSound(); setV(v); }; pad.appendChild(b); }
+    // GENERATE INTERACTIVE PAGES WITH EQUAL BUTTON COUNTS (24 EACH)
+    const page1 = document.getElementById('padPage1');
+    for(let v=350; v<=1300; v+=50) { 
+        const b = document.createElement('button'); 
+        b.className='pad-btn'; 
+        b.innerText=v; 
+        b.onclick=()=> { playPadSound(); setV(v); }; 
+        page1.appendChild(b); 
+    }
+
+    const page2 = document.getElementById('padPage2');
+    for(let v=1350; v<=2500; v+=50) { 
+        const b = document.createElement('button'); 
+        b.className='pad-btn'; 
+        b.innerText=v; 
+        b.onclick=()=> { playPadSound(); setV(v); }; 
+        page2.appendChild(b); 
+    }
+
+    const page3 = document.getElementById('padPage3');
+    for(let v=2550; v<=3700; v+=50) { 
+        const b = document.createElement('button'); 
+        b.className='pad-btn'; 
+        b.innerText=v; 
+        b.onclick=()=> { playPadSound(); setV(v); }; 
+        page3.appendChild(b); 
+    }
+
     render();
 </script>
 </body>
