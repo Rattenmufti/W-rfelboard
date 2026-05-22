@@ -626,7 +626,26 @@
         return `${p.n} (Ø:${avg})`;
     }
 
-    function render() {
+    
+function changeStarter(i) {
+    if (isArcView) return;
+
+    startIdx = i;
+
+    const sorted = getSortedActive();
+    const newApIdx = sorted.findIndex(p => p.i === i);
+
+    focus = {
+        r: 0,
+        pI: i,
+        apIdx: (newApIdx === -1 ? 0 : newApIdx)
+    };
+
+    save();
+    render();
+}
+
+function render() {
         recalculateKingOfTheHill();
         const activeScores = isArcView ? arcScores : scores;
         const activeNames = isArcView ? arcNames : pNames;
@@ -645,7 +664,7 @@
             if (isArcView && (!n || n.trim() === "")) return; 
             const div = document.createElement('div'); div.className = 'name-slot';
             div.innerHTML = `<input value="${n}" ${isArcView?'readonly':''} oninput="updateName(${i}, this.value)" placeholder="...">
-                <button onclick="startIdx=${i}; save(); render();" ${isArcView?'disabled':''} class="btn-starter ${startIdx===i?'active':''}">${startIdx===i?'STARTER':'WAHL'}</button>`;
+                <button type="button" onclick="changeStarter(${i})" ${isArcView?'disabled':''} class="btn-starter ${startIdx===i?'active':''}">${startIdx===i?'STARTER':'WAHL'}</button>`;
             nGrid.appendChild(div);
         });
         
