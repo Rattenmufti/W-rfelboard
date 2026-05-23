@@ -1026,7 +1026,7 @@
             return `<div class="stat-item"><span class="stat-name">${p.n}</span><span class="stat-wins">👑 ${stats[p.i]||0}${isWinningNow}</span></div>`;
         }).join('');
 
-        const cats = [['RONNYS (0)','ronny'],['SMALL (bis 450)','small'],['MED (bis 700)','med'],['BIG (bis 950)','big'],['ELITE (bis 1500)','elite'],['MEISTER (über 1500)','meister']];
+        const cats = [['RONNYS (0)','ronny'],['350 bis 450','small'],['500 bis 700','med'],['750 bis 950','big'],['1000 bis 1500','elite'],['Über 1500','meister']];
         document.getElementById('analysisUI').innerHTML = cats.map(c => {
             const details = sorted.map(p => `<div class="ana-row" style="font-size:0.9rem; margin-top:3px; display:flex; justify-content:between;"><span>${p.n}:</span> <b style="margin-left:auto;">${dist[c[1]][p.i] || 0}</b></div>`).join('');
             return `<div class="analysis-card"><div style="font-size:0.95rem; font-weight:bold; color:var(--accent); border-bottom: 1px solid var(--border); padding-bottom:3px; margin-bottom:5px;">${c[0]}</div>${details}</div>`;
