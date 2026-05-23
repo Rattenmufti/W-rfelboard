@@ -15,7 +15,7 @@
     <title>Würfelboard v0.985 Stable</title>
     <style>
         :root {
-            --primary: #2c3e50; --accent: #e67e22; --win: #27ae60; --ronny: #e74c3c; 
+            --primary: #2c3e50; --accent: #e67e22; --win: #27ae60; --ronny: #e74c3c; \
             --bg: #1a1a1a; --card-bg: #2c2c2c; --text: #eeeeee; --border: #444444;
             --input-focus: #3d3d3d; --table-head: #111111;
             --score-main: #000000; --orange-bar: #ff9800;
@@ -375,6 +375,14 @@
     <div id="arcList"></div>
 </div>
 
+<div id="histView">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; padding: 0 5px;">
+        <h2 style="color:white; margin:0; font-size: 1.2rem;">Historie</h2>
+        <button class="btn-top" onclick="document.getElementById('histView').style.display='none'" style="background:var(--ronny); padding: 5px 15px;">X</button>
+    </div>
+    <div id="arcList"></div>
+</div>
+
 <input type="file" id="csvIn" style="display:none" onchange="loadCSV(event)" accept=".csv,text/csv,text/plain">
 
 <script>
@@ -585,6 +593,15 @@
         isLocked = true;
         const buttons = document.querySelectorAll('.pad-btn');
         buttons.forEach(b => b.disabled = true);
+        
+        // --- HIER WERDEN DIE SOUNDS ABGESPIELT ---
+        if (v === 0) {
+            playCustomAudio('und-weg.mp3'); // Sound für eine Nullrunde
+        } else {
+            playCustomAudio('punkte.mp3');   // Normaler Punkte-Sound
+        }
+        // ----------------------------------------
+
         scores[focus.r][focus.pI] = v.toString(); 
         isQuickPress = true;
         render(); 
@@ -638,26 +655,25 @@
         return `${p.n} (Ø:${avg})`;
     }
 
-    
-function changeStarter(i) {
-    if (isArcView) return;
+    function changeStarter(i) {
+        if (isArcView) return;
 
-    startIdx = i;
+        startIdx = i;
 
-    const sorted = getSortedActive();
-    const newApIdx = sorted.findIndex(p => p.i === i);
+        const sorted = getSortedActive();
+        const newApIdx = sorted.findIndex(p => p.i === i);
 
-    focus = {
-        r: 0,
-        pI: i,
-        apIdx: (newApIdx === -1 ? 0 : newApIdx)
-    };
+        focus = {
+            r: 0,
+            pI: i,
+            apIdx: (newApIdx === -1 ? 0 : newApIdx)
+        };
 
-    save();
-    render();
-}
+        save();
+        render();
+    }
 
-function render() {
+    function render() {
         recalculateKingOfTheHill();
         const activeScores = isArcView ? arcScores : scores;
         const activeNames = isArcView ? arcNames : pNames;
@@ -816,13 +832,13 @@ function render() {
             
             // Audio Trigger Logik (nur wenn wir uns nicht in der Archiv-Ansicht befinden)
             if (!isArcView) {
-                // Sound 1: Unter 1000 Restpunkte gefallen (und noch nicht abgespielt in dieser Runde)
-                if (rest <= 1001 && rest > 0) {
+                // Sound 1: 1001 Restpunkte unterschritten (löst ab 1000 Punkten abwärts aus)
+                if (rest < 1001 && rest > 0) {
                     if (!playedUnder1000[p.i]) {
                         playCustomAudio('unter-1000.mp3');
                         playedUnder1000[p.i] = true;
                     }
-                } else if (rest > 1001) {
+                } else if (rest >= 1001) {
                     // Falls durch eine Korrektur die Punkte wieder steigen, Trigger zurücksetzen
                     playedUnder1000[p.i] = false;
                 }
@@ -974,6 +990,10 @@ function render() {
         
         archive.unshift({ d: new Date().toLocaleString(), w: winText, s: JSON.parse(JSON.stringify(scores)), names: JSON.parse(JSON.stringify(pNames)) });
         scores = [Array(MAX_P).fill("")]; 
+        
+        // --- HIER WIRD DER SOUND FÜR DIE NEUE RUNDE ABGESPIELT ---
+        playCustomAudio('neue-runde.mp3');
+        // ---------------------------------------------------------
         
         // Sound-Status-Arrays beim Start einer neuen Spielrunde komplett zurücksetzen
         playedUnder1000 = Array(MAX_P).fill(false);
