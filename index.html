@@ -15,7 +15,7 @@
     <title>Würfelboard v0.985 Stable</title>
     <style>
         :root {
-            --primary: #2c3e50; --accent: #e67e22; --win: #27ae60; --ronny: #e74c3c; \
+            --primary: #2c3e50; --accent: #e67e22; --win: #27ae60; --ronny: #e74c3c;
             --bg: #1a1a1a; --card-bg: #2c2c2c; --text: #eeeeee; --border: #444444;
             --input-focus: #3d3d3d; --table-head: #111111;
             --score-main: #000000; --orange-bar: #ff9800;
@@ -375,14 +375,6 @@
     <div id="arcList"></div>
 </div>
 
-<div id="histView">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; padding: 0 5px;">
-        <h2 style="color:white; margin:0; font-size: 1.2rem;">Historie</h2>
-        <button class="btn-top" onclick="document.getElementById('histView').style.display='none'" style="background:var(--ronny); padding: 5px 15px;">X</button>
-    </div>
-    <div id="arcList"></div>
-</div>
-
 <input type="file" id="csvIn" style="display:none" onchange="loadCSV(event)" accept=".csv,text/csv,text/plain">
 
 <script>
@@ -414,8 +406,27 @@
         document.getElementById('dot3').classList.toggle('active', pageIdx === 2);
     }
 
-    // Audio-Funktion für haptisches/akustisches Feedback
+    // Intelligentes Audio-Feedback: Testet MP3-Fähigkeit, weicht lautlos bei Fehlern auf Oszillator aus
     function playPadSound() {
+        try {
+            const audio = new Audio('punkte.mp3');
+            audio.play()
+                .then(() => {
+                    // MP3 existiert und startet -> Sofort wieder anhalten. 
+                    // setV() übernimmt gleich das tatsächliche Abspielen des Sounds.
+                    audio.pause();
+                })
+                .catch(e => {
+                    // MP3 fehlt oder lokal blockiert -> Nutze Oszillator-Fallback
+                    playOscillatorFallback();
+                });
+        } catch(e) {
+            playOscillatorFallback();
+        }
+    }
+
+    // Separater Oszillator-Fallback für das Board
+    function playOscillatorFallback() {
         try {
             const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             const osc = audioCtx.createOscillator();
@@ -594,12 +605,16 @@
         const buttons = document.querySelectorAll('.pad-btn');
         buttons.forEach(b => b.disabled = true);
         
-        // --- HIER WERDEN DIE SOUNDS ABGESPIELT ---
-        if (v === 0) {
-            playCustomAudio('und-weg.mp3'); // Sound für eine Nullrunde
-        } else {
-            playCustomAudio('punkte.mp3');   // Normaler Punkte-Sound
-        }
+        // --- INTELLIGENTE AUDIOAUSGABE FÜR WERTE ---
+        const soundFile = (v === 0) ? 'und-weg.mp3' : 'punkte.mp3';
+        const audio = new Audio(soundFile);
+        
+        audio.play()
+            .then(() => { /* MP3 spielt sauber ab */ })
+            .catch(e => {
+                // Wenn MP3 lokal ohne Server fehlschlägt, spiele Oszillator bei Ronny zur Sicherheit direkt
+                if (v === 0) playOscillatorFallback();
+            });
         // ----------------------------------------
 
         scores[focus.r][focus.pI] = v.toString(); 
