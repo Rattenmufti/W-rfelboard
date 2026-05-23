@@ -12,7 +12,7 @@
     <link rel="apple-touch-icon" href="icon.png">
     <link rel="icon" type="image/png" href="icon.png">
     
-    <title>Würfelboard v0.984 Sounds</title>
+    <title>Würfelboard v0.985 Stable</title>
     <style>
         :root {
             --primary: #2c3e50; --accent: #e67e22; --win: #27ae60; --ronny: #e74c3c; 
@@ -321,7 +321,7 @@
     <div id="arcBanner" style="display:none; background:var(--accent); color:white; padding:10px; text-align:center; font-weight:bold; position:fixed; top:0; width:100%; z-index:2000;" onclick="exitArchive()">⚠️ ARCHIV ANSICHT (ZUM VERLASSEN KLICKEN)</div>
 
     <div class="header-bar">
-        <h2 style="margin:0; font-size: 0.8rem; color: var(--accent);">Würfelboard v0.984 Sounds</h2>
+        <h2 style="margin:0; font-size: 0.8rem; color: var(--accent);">Würfelboard v0.985 Stable</h2>
         <div style="display: flex; gap: 5px; flex-wrap: wrap; justify-content: flex-end;">
             <button class="btn-top" onclick="toggleFullscreen()">📺 VOLLBILD</button>
             <button class="btn-top" onclick="saveCSV()">💾 BACKUP</button>
@@ -353,7 +353,7 @@
         <div class="quick-pad" id="padUI">
             <div class="pad-viewport" id="padViewport" onscroll="updatePadDots()">
                 <div class="pad-page" id="padPage1">
-                    <button class="pad-btn btn-ronny" onclick="playPadSound('ronny'); setV(0)">0 (Ronny)</button>
+                    <button class="pad-btn btn-ronny" onclick="playPadSound(); setV(0)">0 (Ronny)</button>
                 </div>
                 <div class="pad-page" id="padPage2"></div>
                 <div class="pad-page" id="padPage3"></div>
@@ -392,6 +392,11 @@
     let isArcView = false, arcScores = [], arcNames = [], isQuickPress = false, isLocked = false;
     let focus = { r: 0, pI: 0, apIdx: 0 }; 
     
+    // Status-Tracking für den "Unter 1000" Sound in der aktuellen laufenden Runde
+    let playedUnder1000 = Array(MAX_P).fill(false);
+    // Status-Tracking für den "Sieger" Sound in der aktuellen laufenden Runde
+    let playedWinnerSound = Array(MAX_P).fill(false);
+
     function updatePadDots() {
         const vp = document.getElementById('padViewport');
         if (!vp) return;
@@ -401,25 +406,27 @@
         document.getElementById('dot3').classList.toggle('active', pageIdx === 2);
     }
 
-    // Audio-Instanzen für die Sound-Dateien im selben Repository
-    const soundPunkte = new Audio('punkte.mp3');
-    const soundRonny = new Audio('und-weg.mp3');
-    const soundNeueRunde = new Audio('neue-runde.mp3');
-
-    // Audio-Funktion für die Wiedergabe der Audio-Files
-    function playPadSound(type) {
+    // Audio-Funktion für haptisches/akustisches Feedback
+    function playPadSound() {
         try {
-            let trackToPlay;
-            if (type === 'ronny') {
-                trackToPlay = soundRonny;
-            } else if (type === 'neue-runde') {
-                trackToPlay = soundNeueRunde;
-            } else {
-                trackToPlay = soundPunkte;
-            }
-            
-            trackToPlay.currentTime = 0;
-            trackToPlay.play();
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(600, audioCtx.currentTime); 
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.05);
+        } catch(e) {}
+    }
+
+    function playCustomAudio(filename) {
+        try {
+            const audio = new Audio(filename);
+            audio.play().catch(e => console.log("Audio-Wiedergabe blockiert oder Datei fehlt:", filename));
         } catch(e) {}
     }
 
@@ -806,6 +813,32 @@ function render() {
                 }
             });
             let rest = 10000 - total;
+            
+            // Audio Trigger Logik (nur wenn wir uns nicht in der Archiv-Ansicht befinden)
+            if (!isArcView) {
+                // Sound 1: Unter 1000 Restpunkte gefallen (und noch nicht abgespielt in dieser Runde)
+                if (rest <= 1001 && rest > 0) {
+                    if (!playedUnder1000[p.i]) {
+                        playCustomAudio('unter-1000.mp3');
+                        playedUnder1000[p.i] = true;
+                    }
+                } else if (rest > 1001) {
+                    // Falls durch eine Korrektur die Punkte wieder steigen, Trigger zurücksetzen
+                    playedUnder1000[p.i] = false;
+                }
+
+                // Sound 2: Sieger-Sound abspielen, sobald die 10.000 voll sind
+                if (rest <= 0) {
+                    if (!playedWinnerSound[p.i]) {
+                        playCustomAudio('sieger.mp3');
+                        playedWinnerSound[p.i] = true;
+                    }
+                } else {
+                    // Falls durch eine Korrektur die Punkte wieder unter die 10.000 sinken
+                    playedWinnerSound[p.i] = false;
+                }
+            }
+
             let statusClass = "";
             let displayText = rest;
             if (rest <= 0) {
@@ -941,13 +974,17 @@ function render() {
         
         archive.unshift({ d: new Date().toLocaleString(), w: winText, s: JSON.parse(JSON.stringify(scores)), names: JSON.parse(JSON.stringify(pNames)) });
         scores = [Array(MAX_P).fill("")]; 
+        
+        // Sound-Status-Arrays beim Start einer neuen Spielrunde komplett zurücksetzen
+        playedUnder1000 = Array(MAX_P).fill(false);
+        playedWinnerSound = Array(MAX_P).fill(false);
+        
         const sorted = getSortedActive();
         if (sorted.length > 0) {
             focus = { r: 0, pI: sorted[0].i, apIdx: 0 };
         }
         
         recalculateKingOfTheHill();
-        playPadSound('neue-runde');
         render(); 
         save();
     }
@@ -972,7 +1009,7 @@ function render() {
         const b = document.createElement('button'); 
         b.className='pad-btn'; 
         b.innerText=v; 
-        b.onclick=()=> { playPadSound('punkte'); setV(v); }; 
+        b.onclick=()=> { playPadSound(); setV(v); }; 
         page1.appendChild(b); 
     }
 
@@ -981,7 +1018,7 @@ function render() {
         const b = document.createElement('button'); 
         b.className='pad-btn'; 
         b.innerText=v; 
-        b.onclick=()=> { playPadSound('punkte'); setV(v); }; 
+        b.onclick=()=> { playPadSound(); setV(v); }; 
         page2.appendChild(b); 
     }
 
@@ -990,7 +1027,7 @@ function render() {
         const b = document.createElement('button'); 
         b.className='pad-btn'; 
         b.innerText=v; 
-        b.onclick=()=> { playPadSound('punkte'); setV(v); }; 
+        b.onclick=()=> { playPadSound(); setV(v); }; 
         page3.appendChild(b); 
     }
 
